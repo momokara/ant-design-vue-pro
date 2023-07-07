@@ -1,4 +1,6 @@
 export const ACCESS_TOKEN = 'Access-Token'
+export const LOGIN_ID = 'Login-ID'
+export const USERINFO = 'Userinfo'
 
 export const SIDEBAR_TYPE = 'sidebar_type'
 export const TOGGLE_MOBILE_TYPE = 'is_mobile'

@@ -1,13 +1,17 @@
 import storage from 'store'
 import expirePlugin from 'store/plugins/expire'
-import { login, getInfo, logout } from '@/api/login'
-import { ACCESS_TOKEN } from '@/store/mutation-types'
+import { login, getInfo } from '@/api/login'
+import { ACCESS_TOKEN, LOGIN_ID } from '@/store/mutation-types'
 import { welcome } from '@/utils/util'
+import { notification } from 'ant-design-vue'
+// import { request } from '@/utils/request'
+// import request from '@/utils/request'
 
 storage.addPlugin(expirePlugin)
 const user = {
   state: {
     token: '',
+    loginID: '',
     name: '',
     welcome: '',
     avatar: '',
@@ -18,6 +22,9 @@ const user = {
   mutations: {
     SET_TOKEN: (state, token) => {
       state.token = token
+    },
+    SET_LOGINID: (state, loginID) => {
+      state.loginID = loginID
     },
     SET_NAME: (state, { name, welcome }) => {
       state.name = name
@@ -37,12 +44,23 @@ const user = {
   actions: {
     // 登录
     Login ({ commit }, userInfo) {
+      console.log('is this login?', userInfo)
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
-          const result = response.result
-          storage.set(ACCESS_TOKEN, result.token, new Date().getTime() + 7 * 24 * 60 * 60 * 1000)
-          commit('SET_TOKEN', result.token)
-          resolve()
+          console.log(response, 'login api')
+          if (response.isSuccess) {
+            const result = response.data
+            storage.set(ACCESS_TOKEN, result.token, new Date().getTime() + 7 * 24 * 60 * 60 * 1000)
+            storage.set(LOGIN_ID, result.userinfo.userName)
+            console.log(storage.get(ACCESS_TOKEN), storage.get(LOGIN_ID))
+          } else {
+            notification['error']({
+              message: '错误',
+              description: response.message || '请求出现错误，请稍后再试',
+              duration: 4
+            })
+          }
+          resolve(response)
         }).catch(error => {
           reject(error)
         })
@@ -50,30 +68,33 @@ const user = {
     },
 
     // 获取用户信息
-    GetInfo ({ commit }) {
+    GetInfo ({ commit, state }) {
       return new Promise((resolve, reject) => {
         // 请求后端获取用户信息 /api/user/info
-        getInfo().then(response => {
-          const { result } = response
-          if (result.role && result.role.permissions.length > 0) {
-            const role = { ...result.role }
-            role.permissions = result.role.permissions.map(permission => {
+        getInfo({ token: state.token, loginID: state.loginID }).then(response => {
+          const { data } = response
+          console.log(data, response, 'getInfo')
+          if (data.menu && data.menu.length > 0) {
+            const role = data.menu
+            console.log(role, 'getInfo role')
+            data.permissions = data.menu.map(permission => {
               const per = {
                 ...permission,
-                actionList: (permission.actionEntitySet || {}).map(item => item.action)
+                actionList: (permission.actionlist || {}).map(item => item.action)
                }
+               console.log(per, 'getInfo permission')
               return per
             })
-            role.permissionList = role.permissions.map(permission => { return permission.permissionId })
+            data.permissionList = role.map(permission => { return permission.id })
             // 覆盖响应体的 role, 供下游使用
-            result.role = role
-
+            data.role = role
+            console.log(data, 'get info')
+            sessionStorage.setItem('menu', JSON.stringify(data.menu))
             commit('SET_ROLES', role)
-            commit('SET_INFO', result)
-            commit('SET_NAME', { name: result.name, welcome: welcome() })
-            commit('SET_AVATAR', result.avatar)
+            commit('SET_INFO', data)
+            commit('SET_NAME', { name: data.userinfo.userName, welcome: welcome() })
             // 下游
-            resolve(result)
+            resolve(data)
           } else {
             reject(new Error('getInfo: roles must be a non-null array !'))
           }
@@ -85,18 +106,9 @@ const user = {
 
     // 登出
     Logout ({ commit, state }) {
-      return new Promise((resolve) => {
-        logout(state.token).then(() => {
-          commit('SET_TOKEN', '')
-          commit('SET_ROLES', [])
-          storage.remove(ACCESS_TOKEN)
-          resolve()
-        }).catch((err) => {
-          console.log('logout fail:', err)
-          // resolve()
-        }).finally(() => {
-        })
-      })
+      commit('SET_TOKEN', '')
+      commit('SET_ROLES', [])
+      storage.remove(ACCESS_TOKEN)
     }
 
   }

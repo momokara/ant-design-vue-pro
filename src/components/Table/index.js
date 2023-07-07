@@ -31,9 +31,9 @@ export default {
       type: Number,
       default: 1
     },
-    pageSize: {
+    pageCount: {
       type: Number,
-      default: 10
+      default: 20
     },
     showSizeChanger: {
       type: Boolean,
@@ -86,7 +86,7 @@ export default {
         ...this.$route,
         name: this.$route.name,
         params: Object.assign({}, this.$route.params, {
-          pageNo: val
+          pageindex: val
         })
       })
       // change pagination, reset total data
@@ -99,9 +99,9 @@ export default {
         current: val
       })
     },
-    pageSize (val) {
+    pageCount (val) {
       Object.assign(this.localPagination, {
-        pageSize: val
+        pageCount: val
       })
     },
     showSizeChanger (val) {
@@ -111,11 +111,11 @@ export default {
     }
   },
   created () {
-    const { pageNo } = this.$route.params
-    const localPageNum = this.pageURI && (pageNo && parseInt(pageNo)) || this.pageNum
+    const { pageindex } = this.$route.params
+    const localPageNum = this.pageURI && (pageindex && parseInt(pageindex)) || this.pageNum
     this.localPagination = ['auto', true].includes(this.showPagination) && Object.assign({}, this.localPagination, {
       current: localPageNum,
-      pageSize: this.pageSize,
+      pageCount: this.pageCount,
       showSizeChanger: this.showSizeChanger
     }) || false
     this.needTotalList = this.initTotalList(this.columns)
@@ -129,7 +129,7 @@ export default {
      */
     refresh (bool = false) {
       bool && (this.localPagination = Object.assign({}, {
-        current: 1, pageSize: this.pageSize
+        current: 1, pageCount: this.pageCount
       }))
       this.loadData()
     },
@@ -140,15 +140,16 @@ export default {
      * @param {Object} sorter 排序条件
      */
     loadData (pagination, filters = this.filters, sorter = this.sorter) {
+      console.log('what happened')
       this.filters = filters
       this.sorter = sorter
 
       this.localLoading = true
       const parameter = Object.assign({
-        pageNo: (pagination && pagination.current) ||
+        pageindex: (pagination && pagination.current) ||
           this.showPagination && this.localPagination.current || this.pageNum,
-        pageSize: (pagination && pagination.pageSize) ||
-          this.showPagination && this.localPagination.pageSize || this.pageSize
+        pageCount: (pagination && pagination.pageCount) ||
+          this.showPagination && this.localPagination.pageCount || this.pageCount
       },
       (sorter && sorter.field && {
         sortField: sorter.field
@@ -160,34 +161,36 @@ export default {
       }
       )
       const result = this.data(parameter)
-      // 对接自己的通用数据接口需要修改下方代码中的 r.pageNo, r.totalCount, r.data
+      // 对接自己的通用数据接口需要修改下方代码中的 r.pageindex, r.totalCount, r.data
       // eslint-disable-next-line
       if ((typeof result === 'object' || typeof result === 'function') && typeof result.then === 'function') {
         result.then(r => {
+          console.log(r, 'is this')
           this.localPagination = this.showPagination && Object.assign({}, this.localPagination, {
-            current: r.pageNo, // 返回结果中的当前分页数
-            total: r.totalCount, // 返回结果中的总记录数
+            current: r.pageindex, // 返回结果中的当前分页数
+            total: r.total, // 返回结果中的总记录数
             showSizeChanger: this.showSizeChanger,
-            pageSize: (pagination && pagination.pageSize) ||
-              this.localPagination.pageSize
+            pageCount: (pagination && pagination.pageCount) ||
+              this.localPagination.pageCount
           }) || false
           // 为防止删除数据后导致页面当前页面数据长度为 0 ,自动翻页到上一页
-          if (r.data.length === 0 && this.showPagination && this.localPagination.current > 1) {
+          if (r.list.length === 0 && this.showPagination && this.localPagination.current > 1) {
             this.localPagination.current--
             this.loadData()
             return
           }
-
-          // 这里用于判断接口是否有返回 r.totalCount 且 this.showPagination = true 且 pageNo 和 pageSize 存在 且 totalCount 小于等于 pageNo * pageSize 的大小
+          console.log('what is this')
+          // 这里用于判断接口是否有返回 r.totalCount 且 this.showPagination = true 且 pageindex 和 pageCount 存在 且 totalCount 小于等于 pageindex * pageCount 的大小
           // 当情况满足时，表示数据不满足分页大小，关闭 table 分页功能
           try {
-            if ((['auto', true].includes(this.showPagination) && r.totalCount <= (r.pageNo * this.localPagination.pageSize))) {
+            if ((['auto', true].includes(this.showPagination) && r.total <= (r.pageindex * this.localPagination.pageCount))) {
               this.localPagination.hideOnSinglePage = true
             }
           } catch (e) {
             this.localPagination = false
           }
-          this.localDataSource = r.data // 返回结果中的数组数据
+          console.log('what is this')
+          this.localDataSource = r.list // 返回结果中的数组数据
         })
         .finally(() => {
           this.localLoading = false

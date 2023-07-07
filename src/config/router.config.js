@@ -37,9 +37,9 @@ export const asyncRouterMap = [
           // },
           {
             path: '/dashboard/workplace',
-            name: 'Workplace',
+            name: '首页',
             component: () => import('@/views/dashboard/Workplace'),
-            meta: { title: 'menu.dashboard.workplace', keepAlive: true, permission: ['dashboard'] }
+            meta: { title: '首页', keepAlive: true, permission: ['dashboard'] }
           }
         ]
       },
@@ -173,6 +173,70 @@ export const asyncRouterMap = [
         ]
       },
 
+      // 系统配置
+      {
+        path: '/system',
+        name: 'system',
+        component: RouteView,
+        redirect: '/system/administrator',
+        meta: { title: '系统配置', icon: 'setting' },
+        children: [
+          {
+            path: '/system/administrator',
+            name: '后台管理员',
+            component: () => import('@/views/system/administrator'),
+            meta: { title: '后台管理员' }
+          },
+          {
+            path: '/system/role',
+            name: '角色管理',
+            component: () => import('@/views/system/role'),
+            meta: { title: '角色管理' }
+          },
+          {
+            path: '/system/security_policy',
+            name: '安全策略设置',
+            component: () => import('@/views/system/security_policy'),
+            meta: { title: '安全策略设置' }
+          },
+          {
+            path: '/system/blacklist',
+            name: '黑名单设置',
+            component: () => import('@/views/system/blacklist'),
+            meta: { title: '黑名单设置' }
+          }
+        ]
+      },
+
+      // 审计管理
+      {
+        path: '/audit',
+        name: 'audit',
+        component: RouteView,
+        redirect: '/audit/operationalLogs',
+        meta: { title: '审计管理', icon: 'setting' },
+        children: [
+          {
+            path: '/audit/operationalLogs',
+            name: '操作日志',
+            component: () => import('@/views/audit/operationalLogs'),
+            meta: { title: '操作日志' }
+          },
+          {
+            path: '/audit/logonLogs',
+            name: '登录日志',
+            component: () => import('@/views/audit/logonLogs'),
+            meta: { title: '登录日志' }
+          },
+          {
+            path: '/audit/securityLogs',
+            name: '安全日志',
+            component: () => import('@/views/audit/securityLogs'),
+            meta: { title: '安全日志' }
+          }
+        ]
+      },
+
       // Exception
       {
         path: '/exception',
@@ -267,14 +331,13 @@ export const asyncRouterMap = [
             ]
           }
         ]
-      }
+      },
 
       // other
-      /*
       {
         path: '/other',
         name: 'otherPage',
-        component: PageView,
+        component: RouteView,
         meta: { title: '其他组件', icon: 'slack', permission: [ 'dashboard' ] },
         redirect: '/other/icon-selector',
         children: [
@@ -317,7 +380,7 @@ export const asyncRouterMap = [
               {
                 path: '/other/list/system-role',
                 name: 'SystemRole',
-                component: () => import('@/views/role/RoleList'),
+                component: () => import('@/views/other/RoleList'),
                 meta: { title: '角色列表2', keepAlive: true }
               },
               {
@@ -330,7 +393,6 @@ export const asyncRouterMap = [
           }
         ]
       }
-      */
     ]
   },
   {

@@ -38,6 +38,12 @@ const constantRouterComponents = {
   ResultSuccess: () => import(/* webpackChunkName: "result" */ '@/views/result/Success'),
   ResultFail: () => import(/* webpackChunkName: "result" */ '@/views/result/Error'),
 
+  // system
+  SystemAdministrator: () => import('@/views/system/administrator'),
+  SystemRole: () => import('@/views/system/role'),
+  SystemSecurityPolicy: () => import('@/views/system/security_policy'),
+  SystemBlacklist: () => import('@/views/system/blacklist'),
+
   // exception
   Exception403: () => import(/* webpackChunkName: "fail" */ '@/views/exception/403'),
   Exception404: () => import(/* webpackChunkName: "fail" */ '@/views/exception/404'),
@@ -63,17 +69,17 @@ const notFoundRouter = {
 }
 
 // 根级菜单
-const rootRouter = {
-  key: '',
-  name: 'index',
-  path: '',
-  component: 'BasicLayout',
-  redirect: '/dashboard',
-  meta: {
-    title: '首页'
-  },
-  children: []
-}
+// const rootRouter = {
+//   key: '',
+//   name: 'index',
+//   path: '',
+//   component: 'BasicLayout',
+//   redirect: '/dashboard',
+//   meta: {
+//     title: '首页'
+//   },
+//   children: []
+// }
 
 // export const generatorStaticRouter = () => {
 
@@ -84,29 +90,21 @@ const rootRouter = {
  * @param token
  * @returns {Promise<Router>}
  */
-export const generatorDynamicRouter = token => {
-  return new Promise((resolve, reject) => {
-    loginService
-      .getCurrentUserNav(token)
-      .then(res => {
-        console.log('generatorDynamicRouter response:', res)
-        const { result } = res
-        const menuNav = []
-        const childrenNav = []
-        //      后端数据, 根级树数组,  根级 PID
-        listToTree(result, childrenNav, 0)
-        rootRouter.children = childrenNav
-        menuNav.push(rootRouter)
-        console.log('menuNav', menuNav)
-        const routers = generator(menuNav)
-        routers.push(notFoundRouter)
-        console.log('routers', routers)
-        resolve(routers)
-      })
-      .catch(err => {
-        reject(err)
-      })
-  })
+export const generatorDynamicRouter = (data) => {
+  console.log('is this router', data)
+  const res = data.data.menu
+  console.log('generatorDynamicRouter response:', res)
+  // const menuNav = []
+  // const childrenNav = []
+  //      后端数据, 根级树数组,  根级 PID
+  // listToTree(res, childrenNav, 0)
+  // rootRouter.children = childrenNav
+  // menuNav.push(rootRouter)
+  // console.log('menuNav', menuNav)
+  const routers = generator(res)
+  routers.push(notFoundRouter)
+  console.log('routers', routers)
+  return (routers)
 }
 
 /**
@@ -118,10 +116,11 @@ export const generatorDynamicRouter = token => {
  */
 export const generator = (routerMap, parent) => {
   return routerMap.map(item => {
+    console.log(item, 'is this')
     const { title, show, hideChildren, hiddenHeaderContent, target, icon } = item.meta || {}
     const currentRouter = {
       // 如果路由设置了 path，则作为默认 path，否则 路由地址 动态拼接生成如 /dashboard/workplace
-      path: item.path || `${(parent && parent.path) || ''}/${item.key}`,
+      path: item.redirect || `${(parent && parent.path) || ''}/${item.key}`,
       // 路由名称，建议唯一
       name: item.name || item.key || '',
       // 该路由对应页面的 组件 :方案1
@@ -167,23 +166,23 @@ export const generator = (routerMap, parent) => {
  * @param tree 树
  * @param parentId 父ID
  */
-const listToTree = (list, tree, parentId) => {
-  list.forEach(item => {
-    // 判断是否为父级菜单
-    if (item.parentId === parentId) {
-      const child = {
-        ...item,
-        key: item.key || item.name,
-        children: []
-      }
-      // 迭代 list， 找到当前菜单相符合的所有子菜单
-      listToTree(list, child.children, item.id)
-      // 删掉不存在 children 值的属性
-      if (child.children.length <= 0) {
-        delete child.children
-      }
-      // 加入到树中
-      tree.push(child)
-    }
-  })
-}
+// const listToTree = (list, tree, parentId) => {
+//   list.forEach(item => {
+//     // 判断是否为父级菜单
+//     if (item.parentId === parentId) {
+//       const child = {
+//         ...item,
+//         key: item.key || item.name,
+//         children: []
+//       }
+//       // 迭代 list， 找到当前菜单相符合的所有子菜单
+//       listToTree(list, child.children, item.id)
+//       // 删掉不存在 children 值的属性
+//       if (child.children.length <= 0) {
+//         delete child.children
+//       }
+//       // 加入到树中
+//       tree.push(child)
+//     }
+//   })
+// }
